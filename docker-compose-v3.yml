@@ -1,27 +1,31 @@
 version: "3.8"
 services:
   app:
-    image: app
+    build: ./app
     ports:
       - 8080:3000
+    volumes:
+    - ./app/src:/app/src
     environment:
       TEXTSTORE_HOST: textstore
       WORKER: worker
       TIMEOUT: 10
-
   worker:
-    image: worker
+    build: ./worker
     deploy:
-      replicas: 5
+      replicas: 1
+    ports:
+      - 8000:3000
     environment:
       TEXTSTORE_HOST: textstore
-      
+    volumes:
+      - ./worker/src:/app/src
   textstore:
     image: mongo
     restart: always
     command: --quiet --syslog
-    expose:
-      - "27017"
+    ports:
+      - 27017:27017
     volumes:
       - textstore-data:/data/db
       - mongo-config:/data/configdb
