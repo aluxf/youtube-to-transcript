@@ -2,13 +2,13 @@
 //$(function(){
     const socket= io();
 
-    function addText() {
+    function addVideo() {
         title = $('#texttitle').val();
         url = $('#texturl').val();
         console.log('Add button clicked, data:', title, url);
         $('#Status').html('<i class="fas fa-spinner fa-spin fa-2x"></i>');
         console.log('adding text ', title);
-        socket.emit('addText', {title:title, url:url});
+        socket.emit('addVideo', {title:title, url:url});
         $('#Results').html('<p>');
     }
     

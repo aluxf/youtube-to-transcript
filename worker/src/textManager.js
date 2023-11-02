@@ -47,6 +47,43 @@ class TextManager {
             .then( batches => Promise.all(batches) )
             .then( results => this._flattenResults(results) );
     }
+
+    //TODO: title already in use handling
+    async addText(title, contents) {
+        console.log(title)
+        const textExists = await Text.findOne({name: title})
+        .then((doc) => {
+            return doc !== null;
+        });
+
+
+        if (textExists) {
+            console.log("Title already in use.");
+            return;
+        }
+
+        contents = contents || '';
+        //console.log('Storing text to database');
+        let lines = contents.split(/\n/);
+        let firstLine = 0;
+        let lastLine = firstLine + CHUNKSIZE;
+
+        const textChunks = [];
+        while (firstLine <= lines.length) {
+
+            let chunk = lines.slice(firstLine, lastLine+1).join('\n');
+            textChunks.push({
+                name: title,
+                startLine: firstLine,
+                contents: chunk
+            });
+            firstLine=lastLine+1;
+            lastLine=firstLine + CHUNKSIZE;
+        }
+        console.log(textChunks)
+        await Text.insertMany(textChunks)
+        .catch((err) => console.error('Error while inserting text: ', err.message))
+    }
     
     listTexts() {
         //console.log('Retrieving available text titles...');

@@ -17,7 +17,9 @@ const YOUTUBE_API_ENDPOINT = (id) => `https://youtube-mp36.p.rapidapi.com/dl?id=
 var router = express.Router();
 router.get('/:textTitle/:searchString', startSearch);
 router.post('/add', addVideo);
+app.use(express.json());
 app.use('/', router);
+
 
 // Here's the core of the poodle
 // --------------------
@@ -50,12 +52,7 @@ function startSearch(req, res) {
  * 5. add to database
  */
 
-
-
-async function addVideo(req, res) {
-
-    /*const {title, url, ..._} = req.body;
-
+/*
     const youtubeVideoId = ""
     const options = {
         method: 'GET',
@@ -87,7 +84,31 @@ async function addVideo(req, res) {
         console.error('Error downloading file:', err);
     });*/
 
-    return;
+
+async function addVideo(req, res) {
+    let title = ""
+    let url = ""
+    try {
+        title = req.body.title
+        url = req.body.url
+    }
+    catch (err) {
+        console.log(err)
+        return res.status(500).send("Invalid body.")
+    }
+
+    content = "bla bla bla lorem ipsum."
+
+    // INSERT YOUTUBE TO TEXT CODE
+
+    const tm = new TextManager()
+    return tm.connect()
+    .then(() => tm.addText(title, content))
+    .then(() => res.status(200).send("Video transcript added."))
+    .catch((err) => {
+        console.error(err)
+        res.status(500).send("Error occurred while adding video.")
+    })
 }
 
 // Simple error handling

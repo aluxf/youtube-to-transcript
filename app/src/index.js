@@ -54,7 +54,7 @@ io.on('connection', socket => {
     socket.emit('clientConnect', {message: 'Welcome, new client'});
 
     socket.on('search', searchTexts );
-    socket.on('addText', addText)    
+    socket.on('addVideo', addVideo)    
     socket.on('disconnect', () => { console.log('user disconnected'); });
 
     // Functions to handle messages from the (web) client
@@ -75,24 +75,15 @@ io.on('connection', socket => {
             .then( jobs => dispatcher.dispatchSearch(message.search, jobs, socket) );
     }
 
-    function addText(message) {
-        let url = message.url || 'https://gutenberg.org/cache/epub/2600/pg2600.txt'
-        let title = message.title || 'War and Peace'
-        console.log('Adding Text', title, 'from', url);
-        return fetch(url)
-            .then(res => res.text())
-            .then(text => {
-                console.log('Fetched text: ', text.substring(1,80))
-                let tm = new TextManager();
-                return tm.connect()
-                    .then( () => tm.addText(title, text) )
-            })
-            .then( () => socket.emit('textAdded', title) )
-            .then(() => console.log('Text added.'))
-            .catch( (err) => {
-                console.log('Could not add text. Error', err);
-                socket.emit('abort', 'Could not add text.');
-            });
+    function addVideo(message) {
+        console.log("?")
+        let url = message.url || 'https://www.youtube.com/watch?v=IzPQ_jA00bk&ab_channel=PostMaloneVEVO';
+        let title = message.title || 'Default Title';
+        console.log('Adding VideoText', title, 'from', url);
+        const dispatcher = new Dispatcher();
+        return dispatcher.dispatchAddVideo(title, url, socket)
+        .then(() => socket.emit("textAdded", title))
+        .catch(err => socket.emit("abort", "Could not add video."))
     }
 });
 
@@ -111,7 +102,6 @@ app.use(function(err, req, res, next) {
     // set locals, only providing error in development
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
-
     if ('/favicon.ico' != req.url) {        
         let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
         console.log('Error %d, remoteAddress: %s', err.status, ip);
