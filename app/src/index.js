@@ -76,7 +76,6 @@ io.on('connection', socket => {
     }
 
     function addVideo(message) {
-        console.log("?")
         let url = message.url || 'https://www.youtube.com/watch?v=IzPQ_jA00bk&ab_channel=PostMaloneVEVO';
         let title = message.title || 'Default Title';
         console.log('Adding VideoText', title, 'from', url);

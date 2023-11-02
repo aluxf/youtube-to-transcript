@@ -18,6 +18,7 @@ services:
       - 8000:3000
     environment:
       TEXTSTORE_HOST: textstore
+      OPENAI_API_KEY: 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
     volumes:
       - ./worker/src:/app/src
   textstore:

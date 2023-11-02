@@ -4,13 +4,22 @@ const port = 3000;
 const server = require('http').createServer(app);
 const os = require('os');
 const fs = require('fs');
+const url = require("url");
+const {pipeline} = require("stream")
+const {promisify} = require("util")
+const OpenAI = require("openai")
 
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY 
+})
+
+const pipelineAsync = promisify(pipeline)
 
 const MAXTHREADS = process.env.MAXTHREADS || 10;
 const TextManager = require('./textManager');
+const { error } = require('console');
 const ActiveSearchStrategy = require('./searchStrategyBuilder')();
 const YOUTUBE_API_ENDPOINT = (id) => `https://youtube-mp36.p.rapidapi.com/dl?id=${id}`;
-
 
 // Express setup
 // --------------------
@@ -19,7 +28,6 @@ router.get('/:textTitle/:searchString', startSearch);
 router.post('/add', addVideo);
 app.use(express.json());
 app.use('/', router);
-
 
 // Here's the core of the poodle
 // --------------------
@@ -52,41 +60,33 @@ function startSearch(req, res) {
  * 5. add to database
  */
 
-/*
-    const youtubeVideoId = ""
-    const options = {
-        method: 'GET',
-        headers: {
-            'X-RapidAPI-Key': '2547961a8emsh411ef67f690eb0ep1833e0jsn5e6d005ff2f6',
-            'X-RapidAPI-Host': 'youtube-mp36.p.rapidapi.com'
-        }
-    };
-
-    //get mp3
-    try {
-        const response = await fetch(YOUTUBE_API_ENDPOINT(id), options);
-        const result = await response.text();
-        console.log(result);
-    } catch (error) {
-        console.error(error);
-    }
-
-    //mp3 download
-    /*fetch(url)
-    .then(res => {
-        if (!res.ok) {
-        throw new Error(`unexpected response ${res.statusText}`);
-        }
-        const dest = fs.createWriteStream(outputPath);
-        res.body.pipe(dest);
+async function downloadMp3(url, output) {
+    return await fetch(url)
+    .then(async res => {
+        const fileStream = fs.createWriteStream(output)
+        await pipelineAsync(res.body, fileStream)
+        console.log(`MP3 file downloaded successfully to ${output}`);
     })
     .catch(err => {
-        console.error('Error downloading file:', err);
-    });*/
+        console.error("Failed to download mp3:", error)
+        fs.unlink(output, (unlinkError) => {
+            if (unlinkError) console.error('Failed to delete the partial file:', unlinkError);
+        });
+        throw err
+    })
+}
 
+async function transcribe(file) {
+    const response = await openai.audio.transcriptions.create({
+        file: fs.createReadStream(file),
+        model: "whisper-1"
+    })
+    return response.text;
+}
 
 async function addVideo(req, res) {
     let title = ""
+    let transcript = ""
     let url = ""
     try {
         title = req.body.title
@@ -97,13 +97,52 @@ async function addVideo(req, res) {
         return res.status(500).send("Invalid body.")
     }
 
-    content = "bla bla bla lorem ipsum."
+    const parsedUrl = new URL(url);
+    const id = parsedUrl.searchParams.get("v");
+    
+    //YouTube to MP3
+    const maxAttempts = 5
+    let attempt = 0
+    let mp3Link = "";
+    while(attempt < maxAttempts && !mp3Link) {
+        try {
+            const response = await fetch(YOUTUBE_API_ENDPOINT(id), {
+                method: 'GET',
+                headers: {
+                    'X-RapidAPI-Key': '2547961a8emsh411ef67f690eb0ep1833e0jsn5e6d005ff2f6',
+                    'X-RapidAPI-Host': 'youtube-mp36.p.rapidapi.com'
+                }
+            });
+            const result = await response.json();
+            console.log(result);
+            if (!result.link) {
+                await new Promise(resolve => setTimeout(resolve, 2000))
+                attempt++;
+                continue;
+            }
+            mp3Link = result.link;
 
-    // INSERT YOUTUBE TO TEXT CODE
+            break;
+        } catch (error) {
+            console.error(error);
+            return res.status(500).send("Error occurred while fetching video")
+        }
+    }
 
+    // Download MP3
+    const fileOutput = `${id}.mp3`
+    console.log(mp3Link)
+    await downloadMp3(mp3Link, fileOutput)
+    .catch(err => {
+        console.error(err)
+        return res.status(500).send("Error occurred while downloading mp3")
+    })
+
+    transcript = await transcribe(fileOutput)
+    
     const tm = new TextManager()
     return tm.connect()
-    .then(() => tm.addText(title, content))
+    .then(() => tm.addText(title, transcript))
     .then(() => res.status(200).send("Video transcript added."))
     .catch((err) => {
         console.error(err)
