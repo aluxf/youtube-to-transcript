@@ -3,5 +3,5 @@ RUN npm install -g nodemon
 WORKDIR /app
 COPY . .
 RUN npm install
-ENV DEBUG='qfworker:*'
+ENV DEBUG='worker:*'
 ENTRYPOINT ["npm", "run", "dev"]

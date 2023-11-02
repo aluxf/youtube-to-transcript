@@ -3,10 +3,14 @@ const app = express();
 const port = 3000;
 const server = require('http').createServer(app);
 const os = require('os');
+const fs = require('fs');
+
 
 const MAXTHREADS = process.env.MAXTHREADS || 10;
 const TextManager = require('./textManager');
 const ActiveSearchStrategy = require('./searchStrategyBuilder')();
+const YOUTUBE_API_ENDPOINT = (id) => `https://youtube-mp36.p.rapidapi.com/dl?id=${id}`;
+
 
 // Express setup
 // --------------------
@@ -32,7 +36,57 @@ function startSearch(req, res) {
         .then( cleaned => res.send(cleaned) );
 }
 
-function addVideo(req, res) {
+/**
+ * 
+ * data = {
+ *  title: example
+ *  url: youtube.com/example
+ * }
+ * 
+ * 1. title url
+ * 2. download youtube mp3 from url
+ * 3. send to whisper
+ * 4. get transcript
+ * 5. add to database
+ */
+
+
+
+async function addVideo(req, res) {
+
+    /*const {title, url, ..._} = req.body;
+
+    const youtubeVideoId = ""
+    const options = {
+        method: 'GET',
+        headers: {
+            'X-RapidAPI-Key': '2547961a8emsh411ef67f690eb0ep1833e0jsn5e6d005ff2f6',
+            'X-RapidAPI-Host': 'youtube-mp36.p.rapidapi.com'
+        }
+    };
+
+    //get mp3
+    try {
+        const response = await fetch(YOUTUBE_API_ENDPOINT(id), options);
+        const result = await response.text();
+        console.log(result);
+    } catch (error) {
+        console.error(error);
+    }
+
+    //mp3 download
+    /*fetch(url)
+    .then(res => {
+        if (!res.ok) {
+        throw new Error(`unexpected response ${res.statusText}`);
+        }
+        const dest = fs.createWriteStream(outputPath);
+        res.body.pipe(dest);
+    })
+    .catch(err => {
+        console.error('Error downloading file:', err);
+    });*/
+
     return;
 }
 

@@ -47,22 +47,6 @@ class TextManager {
             .then( batches => Promise.all(batches) )
             .then( results => this._flattenResults(results) );
     }
-
-    addText(title, contents) {
-        contents = contents || '';
-        //console.log('Storing text to database');
-        let lines = contents.split(/\n/);
-        let firstLine = 0;
-        let lastLine = firstLine + CHUNKSIZE;
-        while (firstLine <= lines.length) {
-            let chunk = lines.slice(firstLine, lastLine+1).join('\n');
-            firstLine=lastLine+1;
-            lastLine=firstLine + CHUNKSIZE;
-            new Text({name: title, startLine: firstLine, contents: chunk})
-                .save()
-                .catch(err => console.log('Error while inserting test text:', err.message));
-        }
-    }
     
     listTexts() {
         //console.log('Retrieving available text titles...');

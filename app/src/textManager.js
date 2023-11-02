@@ -31,37 +31,41 @@ class TextManager {
         return this.startSearch(testJob, 5, (t) => t);
     }
 
-    startSearch(job, nrthreads, searchStrategy) {
-        //console.log('Starting search for', job.searchString);
-        return Text.find({name: job.textTitle})
-            .then(results => {
-                let batches = Array.from(Array(nrthreads), () => Array());
-                let roundRobin = 0;
-                results.forEach(doc => {
-                    batches[roundRobin++].push(doc);
-                    roundRobin %= nrthreads;
-                });            
-                return batches;
-            })
-            .then( batches => batches.map( batch => Promise.resolve(batch).then( batch => this._runSearch(job, batch, searchStrategy) )) )
-            .then( batches => Promise.all(batches) )
-            .then( results => this._flattenResults(results) );
-    }
+    //TODO: title already in use handling
+    async addText(title, contents) {
+        console.log(title)
+        const textExists = await Text.findOne({name: title})
+        .then((doc) => {
+            return doc !== null;
+        });
 
-    addText(title, contents) {
+
+        if (textExists) {
+            console.log("Title already in use.");
+            return;
+        }
+
         contents = contents || '';
         //console.log('Storing text to database');
         let lines = contents.split(/\n/);
         let firstLine = 0;
         let lastLine = firstLine + CHUNKSIZE;
+
+        const textChunks = [];
         while (firstLine <= lines.length) {
+
             let chunk = lines.slice(firstLine, lastLine+1).join('\n');
+            textChunks.push({
+                name: title,
+                startLine: firstLine,
+                contents: chunk
+            });
             firstLine=lastLine+1;
             lastLine=firstLine + CHUNKSIZE;
-            new Text({name: title, startLine: firstLine, contents: chunk})
-                .save()
-                .catch(err => console.log('Error while inserting test text:', err.message));
         }
+        console.log(textChunks)
+        await Text.insertMany(textChunks)
+        .catch((err) => console.error('Error while inserting text: ', err.message))
     }
     
     listTexts() {
