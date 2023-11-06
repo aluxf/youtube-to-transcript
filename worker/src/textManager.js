@@ -45,11 +45,6 @@ class TextManager {
           });
       }
 
-    testSearch() {
-        let testJob= {searchString: 'test', textTitle: 'testText', returnQueue: null, };        
-        return this.startSearch(testJob, 5, (t) => t);
-    }
-
     async startSearch(title) {
         try {
           // We'll first perform a text search on VideoTranscripts with the matching title.
@@ -124,33 +119,7 @@ class TextManager {
         .catch((err) => console.error('Error while inserting text: ', err.message))
     }
     
-    listTexts() {
-        //console.log('Retrieving available text titles...');
-        return Text.distinct('name');
-    }
-
-    _populateTestText() {
-        console.log('Adding a test entry to the database.');
-        return new Text({name:'testText', startLine: 0, contents: 'test'})
-            .save()
-            .catch(err => console.log('Error while inserting test text:', err.message));
-    }
-
-    _runSearch(job, batch, searchStrategy) {
-        return Promise.resolve(batch)
-        .then( batch => {
-            let results = [];
-            batch.forEach( doc => {
-                results.push(searchStrategy.search(job.searchString, doc.contents));
-            });
-
-            return results;
-        });
-    }
-
-    _flattenResults(resultsMatrix) {
-        return resultsMatrix.flat().filter(e => (Array.isArray(e) && (0 < e.length)) );
-    }    
+    
 }
 
 module.exports = TextManager;
