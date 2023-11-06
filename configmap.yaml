@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qfapp-config
+  labels:
+    data: config
+data:
+  TEXTSTORE_HOST: 10.108.109.251
+  WORKER: 10.96.196.149
+  OPENAI_API_KEY: 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
+
+---

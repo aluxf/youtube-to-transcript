@@ -30,7 +30,6 @@ services:
     volumes:
       - textstore-data:/data/db
       - mongo-config:/data/configdb
-
 volumes:
   textstore-data:
   mongo-config:

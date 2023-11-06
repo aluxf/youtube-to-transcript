@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qfapp-config
+  labels:
+    data: config
+data:
+  TEXTSTORE_HOST: ${TEXTSTORE_IP}
+  WORKER: ${WORKER_IP}
+  OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+---
