@@ -18,13 +18,12 @@ const pipelineAsync = promisify(pipeline)
 const MAXTHREADS = process.env.MAXTHREADS || 10;
 const TextManager = require('./textManager');
 const { error } = require('console');
-const ActiveSearchStrategy = require('./searchStrategyBuilder')();
 const YOUTUBE_API_ENDPOINT = (id) => `https://youtube-mp36.p.rapidapi.com/dl?id=${id}`;
 
 // Express setup
 // --------------------
 var router = express.Router();
-router.get('/:textTitle/:searchString', startSearch);
+router.get('/search', startSearch);
 router.post('/add', addVideo);
 app.use(express.json());
 app.use('/', router);
@@ -32,18 +31,17 @@ app.use('/', router);
 // Here's the core of the poodle
 // --------------------
 function startSearch(req, res) {
-    if (!req.params.searchString) return res.send('EMPTY');
-    let title = req.params.textTitle.replaceAll('+', ' ').trim();
-    let searchTerm = req.params.searchString.replaceAll('+', ' ').trim();
+    if (!req.query.title) return res.send('INVALID SEARCH');
+    let title = req.query.title.replaceAll('+', ' ').trim();
     let textManager = new TextManager();
-    let textSearcher = new ActiveSearchStrategy();
-    console.log('Searching in', title, 'for:', searchTerm);
+    console.log('Searching for', title);
     return textManager.connect()
-        .then( () => textManager.startSearch( {searchString: searchTerm, textTitle: title}, MAXTHREADS, textSearcher) )
-        .then( result => result.flat().map( r => { return { textTitle: title,
-                                                            contents: r.replace(/[\n\r]/g, ' ').trim()};}))
-        .then( r => { console.log('Number of results:',r.length); return r; })
-        .then( cleaned => res.send(cleaned) );
+        .then( () => textManager.startSearch(title) )
+        .then( r => {
+            console.log(r)
+            res.send(r)
+        })
+        .catch(() => res.send("ERROR ON SEARCH"))
 }
 
 /**
@@ -142,7 +140,7 @@ async function addVideo(req, res) {
     
     const tm = new TextManager()
     return tm.connect()
-    .then(() => tm.addText(title, transcript))
+    .then(() => tm.addText(title, url, transcript))
     .then(() => res.status(200).send("Video transcript added."))
     .catch((err) => {
         console.error(err)

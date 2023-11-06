@@ -64,15 +64,9 @@ io.on('connection', socket => {
     // call, but that sounds lime work.
     // --------------------
     function searchTexts(message) {
-        // Fetch the available texts from TextManager
-        // Let the Dispatcher format them as "jobs"
-        // Then dispatch the search
-        let tm = new TextManager();
+
         let dispatcher = new Dispatcher();
-        return tm.connect()
-            .then( tm.listTexts )
-            .then( texts => dispatcher.formatJobs(message.search, texts, socket.id) )
-            .then( jobs => dispatcher.dispatchSearch(message.search, jobs, socket) );
+        return dispatcher.dispatchSearch(message.search, socket) ;
     }
 
     function addVideo(message) {

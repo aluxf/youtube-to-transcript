@@ -59,26 +59,21 @@ class Dispatcher {
         });
     }
 
-    dispatchSearch(searchString, jobs, socket) {
-        console.log('Searching for : ' + searchString);
-
-        if (0 >= jobs.length) {
-            socket.emit('done', {msg: 'no texts available' }); 
-            return 'DONE'
-        };        
+    async dispatchSearch(searchString, socket) {
+        console.log('Searching for : ' + searchString);   
 
         setTimeout( () => socket.emit('done', {msg: 'timeout'}), this.TIMEOUT);
 
-        return Promise.all(jobs.map( j => {
-            let title = j.textTitle.replaceAll(' ','+');
-            let search = j.searchString.replaceAll(' ','+');
-            let url = this.BASEURL + '/' + title + '/' +search;
-            console.log('Using url:', url);
-            return fetch(url)
-                .then(res => res.json())
-                .then(res => res.forEach( t => socket.emit('answer', JSON.stringify(t))));
-        }))
-        .then( () => socket.emit('done', {msg: 'done'}));
+        let search = searchString.replaceAll(' ','+');
+        let url = `${this.BASEURL}/search?title=${search}`;
+        console.log('Using url:', url);
+        return fetch(url)
+            .then(res => res.text())
+            .then(res => {
+                console.log(res)
+                socket.emit('answer', res)
+            })
+            .then( () => socket.emit('done', {msg: 'done'}));
     }
 
 }

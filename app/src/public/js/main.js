@@ -16,8 +16,11 @@ $(function(){
         }});
 
     socket.on('answer', msg => {
-        parsed = JSON.parse(msg);
-        $('#Results').append('<li><b>' + parsed.textTitle + '</b> ' + parsed.contents + '\n');
+
+        const transcripts = JSON.parse(msg);
+        for (const t of transcripts) {
+            $('#Results').append('<li><b>' + t.videoTranscript.title+ '</b> ' + t.fullText + '\n');
+        }
     });
 
     socket.on('done', () => {
